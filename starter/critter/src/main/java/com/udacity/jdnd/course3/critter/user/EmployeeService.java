@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,9 +43,23 @@ public class EmployeeService {
         createEmployee(copyEmployeeToDTO(employee));
     }
 
-    public List<EmployeeDTO> getEmployeesForService(EmployeeRequestDTO employeeRequestDTO) {
+    public List<EmployeeDTO> getEmployeesAvailability(LocalDate givenDate, Set<EmployeeSkill> givenSkills) {
+        // employeeRequestDTO has both LocalDate date & Set<EmployeeSkill> skills
+        DayOfWeek givenDayOfWeek = givenDate.getDayOfWeek();
+        List<EmployeeDTO> employeeDTOMatches = new ArrayList<>();
 
-        return ;
+        for (Employee employee : employeeRepository.findAll()) {
+            boolean isAvailableOnGivenDay = employee.getDaysAvailable().contains(givenDayOfWeek);
+            if (isAvailableOnGivenDay) {
+                for (EmployeeSkill skill : employee.getSkills()) {
+                    if (givenSkills.contains(skill)) {
+                        employeeDTOMatches.add(copyEmployeeToDTO(employee));
+                    }
+                }
+            }
+        }
+
+        return employeeDTOMatches;
     }
 
     private Employee copyEmployeeDTOToEntity(EmployeeDTO employeeDTO) {
