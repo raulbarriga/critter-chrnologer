@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityNotFoundException;
 import java.time.DayOfWeek;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -31,21 +32,29 @@ public class EmployeeService {
         return copyEmployeeToDTO(employee);
     }
 
+    public void setEmployeeAvailability(Set<DayOfWeek> daysAvailable, long employeeId) {
+        Employee employee = employeeRepository
+                .findById(employeeId)
+                .orElseThrow(() -> new EntityNotFoundException("Employee with id " + employeeId + " not found"));
+
+        employee.setDaysAvailable(daysAvailable);
+        createEmployee(copyEmployeeToDTO(employee));
+    }
+
+    public List<EmployeeDTO> getEmployeesForService(EmployeeRequestDTO employeeRequestDTO) {
+
+        return ;
+    }
+
     private Employee copyEmployeeDTOToEntity(EmployeeDTO employeeDTO) {
         Employee employee = new Employee();
         BeanUtils.copyProperties(employeeDTO, employee);
 
         // need to map skills & daysAvailable
-        Set<EmployeeSkill> skills = new HashSet<>();
-        for (EmployeeSkill skill : employeeDTO.getSkills()) {
-            skills.add(skill);
-        }
+        Set<EmployeeSkill> skills = new HashSet<>(employeeDTO.getSkills());
         employee.setSkills(skills);
 
-        Set<DayOfWeek> daysAvailable = new HashSet<>();
-        for (DayOfWeek day : employeeDTO.getDaysAvailable()) {
-            daysAvailable.add(day);
-        }
+        Set<DayOfWeek> daysAvailable = new HashSet<>(employeeDTO.getDaysAvailable());
         employee.setDaysAvailable(daysAvailable);
 
         return employee;
@@ -56,16 +65,10 @@ public class EmployeeService {
         BeanUtils.copyProperties(employee, dto);
 
         // need to map skills & daysAvailable
-        Set<EmployeeSkill> skills = new HashSet<>();
-        for (EmployeeSkill skill : employee.getSkills()) {
-            skills.add(skill);
-        }
+        Set<EmployeeSkill> skills = new HashSet<>(employee.getSkills());
         dto.setSkills(skills);
 
-        Set<DayOfWeek> daysAvailable = new HashSet<>();
-        for (DayOfWeek day : employee.getDaysAvailable()) {
-            daysAvailable.add(day);
-        }
+        Set<DayOfWeek> daysAvailable = new HashSet<>(employee.getDaysAvailable());
         dto.setDaysAvailable(daysAvailable);
 
         return dto;

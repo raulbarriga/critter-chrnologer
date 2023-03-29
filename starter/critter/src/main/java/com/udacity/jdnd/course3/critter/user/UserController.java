@@ -1,5 +1,6 @@
 package com.udacity.jdnd.course3.critter.user;
 
+import javassist.NotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.DayOfWeek;
@@ -35,8 +36,8 @@ public class UserController {
     }
 
     @GetMapping("/customer/pet/{petId}")
-    public CustomerDTO getOwnerByPet(@PathVariable long petId){
-        throw new UnsupportedOperationException();
+    public CustomerDTO getOwnerByPet(@PathVariable long petId) throws NotFoundException {
+        return customerService.getOwnerByPet(petId);
     }
 
     @PostMapping("/employee")
@@ -46,18 +47,16 @@ public class UserController {
 
     @PostMapping("/employee/{employeeId}")
     public EmployeeDTO getEmployee(@PathVariable long employeeId) {
-        //throw new UnsupportedOperationException();
         return employeeService.getEmployeeById(employeeId);
     }
 
     @PutMapping("/employee/{employeeId}")
     public void setAvailability(@RequestBody Set<DayOfWeek> daysAvailable, @PathVariable long employeeId) {
-        throw new UnsupportedOperationException();
+        employeeService.setEmployeeAvailability(daysAvailable, employeeId);
     }
 
     @GetMapping("/employee/availability")
     public List<EmployeeDTO> findEmployeesForService(@RequestBody EmployeeRequestDTO employeeDTO) {
-        throw new UnsupportedOperationException();
+        return employeeService.getEmployeesForService(employeeDTO);
     }
-
 }

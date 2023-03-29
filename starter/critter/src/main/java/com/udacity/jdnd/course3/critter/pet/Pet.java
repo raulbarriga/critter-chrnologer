@@ -1,6 +1,5 @@
 package com.udacity.jdnd.course3.critter.pet;
 
-import com.udacity.jdnd.course3.critter.user.Customer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,12 +20,13 @@ public class Pet {
 
     private String name;
 
-    @Column(name = "owner_id")
-    private long ownerId;
+    //@Column(name = "owner_id")
 
     @ManyToOne
     @JoinColumn(name = "owner_id", insertable=false, updatable=false)
-    private Customer owner;
+    private long ownerId;
+
+    //private Customer owner;
 
     @Column(name = "birth_date")
     private LocalDate birthDate;

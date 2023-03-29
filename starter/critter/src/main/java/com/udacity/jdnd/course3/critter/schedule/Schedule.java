@@ -1,7 +1,5 @@
 package com.udacity.jdnd.course3.critter.schedule;
 
-import com.udacity.jdnd.course3.critter.pet.Pet;
-import com.udacity.jdnd.course3.critter.user.Employee;
 import com.udacity.jdnd.course3.critter.user.EmployeeSkill;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,13 +22,13 @@ public class Schedule {
     @JoinTable(name = "schedule_employee",
             joinColumns = @JoinColumn(name = "schedule_id"),
             inverseJoinColumns = @JoinColumn(name = "employee_id"))
-    private List<Employee> employees;
+    private List<Long> employeeIds;
 
     @ManyToMany
     @JoinTable(name = "schedule_pet",
             joinColumns = @JoinColumn(name = "schedule_id"),
             inverseJoinColumns = @JoinColumn(name = "pet_id"))
-    private List<Pet> pets;
+    private List<Long> petIds;
 
     private LocalDate date;
 
