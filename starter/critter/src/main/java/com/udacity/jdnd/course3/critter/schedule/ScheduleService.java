@@ -1,6 +1,9 @@
 package com.udacity.jdnd.course3.critter.schedule;
 
-import com.udacity.jdnd.course3.critter.user.EmployeeSkill;
+import com.udacity.jdnd.course3.critter.pet.Pet;
+import com.udacity.jdnd.course3.critter.pet.PetRepository;
+import com.udacity.jdnd.course3.critter.pet.PetService;
+import com.udacity.jdnd.course3.critter.user.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +14,21 @@ import java.util.Set;
 
 @Service
 public class ScheduleService {
-    private final ScheduleRepository scheduleRepository;
 
-    public ScheduleService(ScheduleRepository scheduleRepository) {
+    private final ScheduleRepository scheduleRepository;
+    private final CustomerRepository customerRepository;
+    private final EmployeeRepository employeeRepository;
+    private final PetRepository petRepository;
+    private final PetService petService;
+    private final EmployeeService employeeService;
+
+    public ScheduleService(ScheduleRepository scheduleRepository, CustomerRepository customerRepository, EmployeeRepository employeeRepository, PetRepository petRepository, PetService petService, EmployeeService employeeService) {
         this.scheduleRepository = scheduleRepository;
+        this.customerRepository = customerRepository;
+        this.employeeRepository = employeeRepository;
+        this.petRepository = petRepository;
+        this.petService = petService;
+        this.employeeService = employeeService;
     }
 
     public ScheduleDTO createSchedule(ScheduleDTO scheduleDTO) {
@@ -37,55 +51,57 @@ public class ScheduleService {
     }
 
     public List<ScheduleDTO> getPetSchedule(long petId) {
-        List<Schedule> petSchedules = scheduleRepository.findAllByPetId(petId);
-
-        List<ScheduleDTO> petSchedulesDTOs = new ArrayList<>();
-        for (Schedule petSchedule : petSchedules) {
-            ScheduleDTO scheduleDTO = copyScheduleToDTO(petSchedule);
-            petSchedulesDTOs.add(scheduleDTO);
+        Pet pet = petRepository.getOne(petId);
+        List<Schedule> schedules = scheduleRepository.getAllByPetsContains(pet);
+        List<ScheduleDTO> schedulesDTOs = new ArrayList<>();
+        for (Schedule schedule : schedules) {
+            schedulesDTOs.add(copyScheduleToDTO(schedule));
         }
 
-        return petSchedulesDTOs;
+        return schedulesDTOs;
     }
 
     public List<ScheduleDTO> getEmployeeSchedule(long employeeId) {
-        List<Schedule> employeeSchedules = scheduleRepository.findAllByEmployeeId(employeeId);
-
-        List<ScheduleDTO> employeeSchedulesDTOs = new ArrayList<>();
-        for (Schedule employeeSchedule : employeeSchedules) {
-            ScheduleDTO scheduleDTO = copyScheduleToDTO(employeeSchedule);
-            employeeSchedulesDTOs.add(scheduleDTO);
+        Employee employee = employeeRepository.getOne(employeeId);
+        List<Schedule> schedules = scheduleRepository.getAllByEmployeesContains(employee);
+        List<ScheduleDTO> schedulesDTOs = new ArrayList<>();
+        for (Schedule schedule : schedules) {
+            schedulesDTOs.add(copyScheduleToDTO(schedule));
         }
 
-        return employeeSchedulesDTOs;
+        return schedulesDTOs;
     }
 
     public List<ScheduleDTO> getCustomerSchedule(long customerId) {
-        List<Schedule> customerSchedules = scheduleRepository.findAllByCustomerId(customerId);
-
-        List<ScheduleDTO> customerSchedulesDTOs = new ArrayList<>();
-        for (Schedule customerSchedule : customerSchedules) {
-            ScheduleDTO scheduleDTO = copyScheduleToDTO(customerSchedule);
-            customerSchedulesDTOs.add(scheduleDTO);
+        Customer customer = customerRepository.getOne(customerId);
+        List<Schedule> schedules = scheduleRepository.getAllByPetsIn(customer.getPets());
+        List<ScheduleDTO> schedulesDTOs = new ArrayList<>();
+        for (Schedule schedule : schedules) {
+            schedulesDTOs.add(copyScheduleToDTO(schedule));
         }
 
-        return customerSchedulesDTOs;
+        return schedulesDTOs;
     }
 
     private Schedule copyScheduleDTOToEntity(ScheduleDTO scheduleDTO) {
         Schedule schedule = new Schedule();
         BeanUtils.copyProperties(scheduleDTO, schedule);
-        // iterate over List<Long> employeeIds
-        // employeeRepository.findById(employeeId)
-        //                    .orElseThrow(() -> new EntityNotFoundException("Employee with id " + employeeId + " not found")));
-        List<Long> employeeIds = new ArrayList<>(scheduleDTO.getEmployeeIds());
-        schedule.setEmployeeIds(employeeIds);
 
-        // iterate over List<Long> employeeIds
-        // petRepository.findById(petId)
-        //                    .orElseThrow(() -> new EntityNotFoundException("Pet with id " + petId + " not found")))
-        List<Long> petIds = new ArrayList<>(scheduleDTO.getPetIds());
-        schedule.setPetIds(petIds);
+        List<Long> employeeIds = new ArrayList<>(scheduleDTO.getEmployeeIds());
+        List<Employee> employeesList = new ArrayList<>();
+        for (Long employeeId : employeeIds) {
+            employeesList.add(employeeService.getEmployee(employeeId));
+        }
+        schedule.setEmployees(employeesList);
+
+        List<Long> petIdsList = new ArrayList<>(scheduleDTO.getPetIds());
+        List<Pet> petsList = new ArrayList<>();
+
+        for (Long petId : petIdsList) {
+            petsList.add(petService.getPet(petId));
+        }
+        // dto saves petIds, entity saves the whole Pet object
+        schedule.setPets(petsList);
 
         // iterate over Set<EmployeeSkill> activities
         Set<EmployeeSkill> activities = new HashSet<>(scheduleDTO.getActivities());
@@ -98,11 +114,22 @@ public class ScheduleService {
         ScheduleDTO dto = new ScheduleDTO();
         BeanUtils.copyProperties(schedule, dto);
 
-        List<Long> employeeIds = new ArrayList<>(schedule.getEmployeeIds());
-        dto.setEmployeeIds(employeeIds);
+        List<Employee> employeesList = new ArrayList<>(schedule.getEmployees());
+        List<Long> employeeIdsList = new ArrayList<>();
+        for (Employee employee : employeesList) {
+            employeeIdsList.add(employee.getId());
+        }
+        // dto saves petIds, entity saves the whole Pet object
+        dto.setEmployeeIds(employeeIdsList);
 
-        List<Long> petIds = new ArrayList<>(schedule.getPetIds());
-        dto.setPetIds(petIds);
+        List<Pet> petsList = new ArrayList<>(schedule.getPets());
+        List<Long> petIdsList = new ArrayList<>();
+        for (Pet pet : petsList) {
+            petIdsList.add(pet.getId());
+        }
+        // dto saves petIds, entity saves the whole Pet object
+        dto.setPetIds(petIdsList);
+
 
         Set<EmployeeSkill> activities = new HashSet<>(schedule.getActivities());
         dto.setActivities(activities);

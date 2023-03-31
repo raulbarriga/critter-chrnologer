@@ -39,27 +39,30 @@ public class EmployeeService {
                 .findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException("Employee with id " + employeeId + " not found"));
 
+        // not returning a dto since we're updating a PUT request
         employee.setDaysAvailable(daysAvailable);
-        createEmployee(copyEmployeeToDTO(employee));
+        employeeRepository.save(employee);
     }
 
     public List<EmployeeDTO> getEmployeesAvailability(LocalDate givenDate, Set<EmployeeSkill> givenSkills) {
         // employeeRequestDTO has both LocalDate date & Set<EmployeeSkill> skills
         DayOfWeek givenDayOfWeek = givenDate.getDayOfWeek();
         List<EmployeeDTO> employeeDTOMatches = new ArrayList<>();
-
-        for (Employee employee : employeeRepository.findAll()) {
+        List<Employee> employees = employeeRepository.findAll();
+        for (Employee employee : employees) {
             boolean isAvailableOnGivenDay = employee.getDaysAvailable().contains(givenDayOfWeek);
             if (isAvailableOnGivenDay) {
-                for (EmployeeSkill skill : employee.getSkills()) {
-                    if (givenSkills.contains(skill)) {
-                        employeeDTOMatches.add(copyEmployeeToDTO(employee));
-                    }
+                if (isAvailableOnGivenDay && employee.getSkills().containsAll(givenSkills)) {
+                    employeeDTOMatches.add(copyEmployeeToDTO(employee));
                 }
             }
         }
 
         return employeeDTOMatches;
+    }
+
+    public Employee getEmployee(long employeeId){
+        return employeeRepository.getOne(employeeId);
     }
 
     private Employee copyEmployeeDTOToEntity(EmployeeDTO employeeDTO) {
@@ -70,8 +73,10 @@ public class EmployeeService {
         Set<EmployeeSkill> skills = new HashSet<>(employeeDTO.getSkills());
         employee.setSkills(skills);
 
-        Set<DayOfWeek> daysAvailable = new HashSet<>(employeeDTO.getDaysAvailable());
-        employee.setDaysAvailable(daysAvailable);
+        Set<DayOfWeek> daysAvailable = employeeDTO.getDaysAvailable();
+        if (daysAvailable != null && !daysAvailable.isEmpty()) {
+            employee.setDaysAvailable(daysAvailable);
+        }
 
         return employee;
     }
@@ -84,8 +89,10 @@ public class EmployeeService {
         Set<EmployeeSkill> skills = new HashSet<>(employee.getSkills());
         dto.setSkills(skills);
 
-        Set<DayOfWeek> daysAvailable = new HashSet<>(employee.getDaysAvailable());
-        dto.setDaysAvailable(daysAvailable);
+        Set<DayOfWeek> daysAvailable = employee.getDaysAvailable();
+        if (daysAvailable != null && !daysAvailable.isEmpty()) {
+            dto.setDaysAvailable(daysAvailable);
+        }
 
         return dto;
     }

@@ -4,6 +4,7 @@ import com.udacity.jdnd.course3.critter.pet.Pet;
 import com.udacity.jdnd.course3.critter.pet.PetService;
 import javassist.NotFoundException;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final PetService petService;
 
+    @Autowired
     public CustomerService(CustomerRepository customerRepository, PetService petService) {
         this.customerRepository = customerRepository;
         this.petService = petService;
@@ -28,8 +30,8 @@ public class CustomerService {
 
     public List<CustomerDTO> getAllCustomers() {
         List<Customer> customers = customerRepository.findAll();
-
         List<CustomerDTO> customerDTOs = new ArrayList<>();
+
         for (Customer customer : customers) {
             CustomerDTO customerDTO = copyCustomerToDTO(customer);
             customerDTOs.add(customerDTO);
@@ -44,7 +46,7 @@ public class CustomerService {
             throw new NotFoundException("Pet not found with id " + petId);
         }
 
-        long customerId = pet.getOwnerId();
+        long customerId = pet.getOwner().getId();
         Customer customer = getCustomer(customerId);
         if (customer == null) {
             throw new NotFoundException("Customer not found with id " + customerId);
@@ -53,7 +55,7 @@ public class CustomerService {
         return copyCustomerToDTO(customer);
     }
 
-    private Customer getCustomer(long customerId){
+    public Customer getCustomer(long customerId){
         return customerRepository.getOne(customerId);
     }
 
@@ -61,10 +63,17 @@ public class CustomerService {
         Customer customer = new Customer();
         BeanUtils.copyProperties(customerDTO, customer);
 
-        // petRepository.findById(petId)
-        //                    .orElseThrow(() -> new EntityNotFoundException("Pet with id " + petId + " not found")))
-        List<Long> pets = new ArrayList<>(customerDTO.getPetIds());
-        customer.setPetIds(pets);
+        List<Long> petIds = customerDTO.getPetIds();
+        if (petIds != null && !petIds.isEmpty()) {
+            List<Pet> petsList = new ArrayList<>();
+
+            for (Long petId : petIds) {
+                petsList.add(petService.getPet(petId));
+            }
+            // dto saves petIds, entity saves the whole Pet object
+            customer.setPets(petsList);
+        }
+
 
         return customer;
     }
@@ -72,9 +81,14 @@ public class CustomerService {
     private CustomerDTO copyCustomerToDTO(Customer customer){
         CustomerDTO dto = new CustomerDTO();
         BeanUtils.copyProperties(customer, dto);
-        //customer.getPetIds().forEach( pet -> dto.getPetIds().add(pet.getId()));
-        List<Long> petIds = new ArrayList<>(customer.getPetIds());
-        dto.setPetIds(petIds);
+
+        List<Pet> petsList = new ArrayList<>(customer.getPets());
+        List<Long> petIdsList = new ArrayList<>();
+        for (Pet pet : petsList) {
+            petIdsList.add(pet.getId());
+        }
+        // dto saves petIds, entity saves the whole Pet object
+        dto.setPetIds(petIdsList);
 
         return dto;
     }

@@ -1,6 +1,9 @@
 package com.udacity.jdnd.course3.critter.pet;
 
+import com.udacity.jdnd.course3.critter.user.Customer;
+import com.udacity.jdnd.course3.critter.user.CustomerService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
@@ -8,11 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class PetService {
+public class PetService {// customerService
     private final PetRepository petRepository;
+    private CustomerService customerService;
 
     public PetService(PetRepository petRepository) {
         this.petRepository = petRepository;
+    }
+
+    // to avoid a circular reference error between this class & the CustomerService one
+    @Autowired
+    public void setCustomerService(CustomerService customerService) {
+        this.customerService = customerService;
     }
 
     public PetDTO createPet(PetDTO petDTO) {
@@ -25,6 +35,7 @@ public class PetService {
     public PetDTO getPetById(long petId) {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new EntityNotFoundException("Pet with id " + petId + " not found"));
+
         return copyPetToDTO(pet);
     }
 
@@ -63,6 +74,13 @@ public class PetService {
     private Pet copyPetDTOToEntity(PetDTO petDTO) {
         Pet pet = new Pet();
         BeanUtils.copyProperties(petDTO, pet);
+        // call get owner by id to get a `Customer` object back
+        if (petDTO.getOwnerId() != 0) {
+            Customer owner = customerService.getCustomer(petDTO.getOwnerId());
+            pet.setOwner(owner);
+            // update the owner with the new pet and save
+            owner.getPets().add(pet);
+        }
 
         return pet;
     }
@@ -70,6 +88,10 @@ public class PetService {
     private PetDTO copyPetToDTO(Pet pet){
         PetDTO dto = new PetDTO();
         BeanUtils.copyProperties(pet, dto);
+        if (pet.getOwner().getId() != 0) {
+            Customer owner = customerService.getCustomer(pet.getOwner().getId());
+            dto.setOwnerId(owner.getId());
+        }
 
         return dto;
     }
