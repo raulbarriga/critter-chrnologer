@@ -2,6 +2,7 @@ package com.udacity.jdnd.course3.critter.user;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.DayOfWeek;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Transactional
 @Service
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
